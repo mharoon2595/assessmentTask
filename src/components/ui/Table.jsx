@@ -13,7 +13,7 @@ const Table = ({ children, className = "", ...props }) => {
   );
 };
 
-const TableTitle = ({ children, className = "", ...props }) => {
+const Header = ({ children, className = "", ...props }) => {
   return (
     <thead className={`bg-gray-50 ${className}`} {...props}>
       {children}
@@ -40,7 +40,7 @@ const TableRow = ({ children, className = "", ...props }) => {
   );
 };
 
-const Header = ({ children, className = "", ...props }) => {
+const TableTitle = ({ children, className = "", ...props }) => {
   return (
     <th
       scope="col"

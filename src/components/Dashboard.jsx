@@ -1,27 +1,56 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { fetchUsers, fetchWeatherData } from "./utils/api";
+import UserTable from "./UserTAble";
+import WeatherChart from "./WeatherChart";
+import Button from "./ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card";
+import LoadingSpinner from "./utils/LoadingSpinner";
+import { LocationContext } from "./utils/Context";
+import { useNavigate } from "react-router-dom";
 
-async function fetchUsers() {
-  const response = await fetch("https://jsonplaceholder.typicode.com/users");
-  if (!response.ok) {
-    throw new Error("Failed to fetch users");
-  }
-  return response.json();
-}
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-const Dashboard = () => {
+export default function Dashboard() {
+  const { location } = useContext(LocationContext);
   const [users, setUsers] = useState([]);
-  const [error, setError] = useState(null);
+  const [weatherData, setWeatherData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const usersData = await fetchUsers();
+        const [usersData, weatherData] = await Promise.all([
+          fetchUsers(),
+          fetchWeatherData(location),
+        ]);
         setUsers(usersData);
+        setWeatherData(weatherData);
       } catch (err) {
         console.log(err);
-        setError("Failed to fetch data. Please try again later.");
+        setError("Please enter the name of a valid city and try again.");
       } finally {
         setLoading(false);
       }
@@ -30,15 +59,87 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Dashboard Report", 14, 22);
+
+    // Add user table
+    doc.autoTable({
+      head: [["ID", "Name", "Email"]],
+      body: users.map((user) => [user.id, user.name, user.email]),
+      startY: 30,
+    });
+
+    // Add weather chart
+    const canvas = document.getElementById("weather-chart");
+    if (canvas) {
+      const chartImg = canvas.toDataURL("image/png");
+      doc.addImage(
+        chartImg,
+        "PNG",
+        14,
+        doc.lastAutoTable.finalY + 10,
+        180,
+        100
+      );
+    }
+
+    // Save the PDF
+    doc.save(`${location}-forecast.pdf`);
+  };
+
   if (loading)
     return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
+      <div className=" relative flex justify-center items-center h-screen">
+        <LoadingSpinner />
       </div>
     );
-  if (error) return <div className="text-red-500 text-center">{error}</div>;
+  if (error) {
+    return (
+      <>
+        <main className="h-[90vh] flex flex-col justify-center items-center gap-2">
+          <div className="text-red-500 text-lg text-center">{error}</div>
+          <button
+            className="bg-yellow-500 p-3 rounded-md"
+            onClick={() => navigate("/")}
+          >
+            Go back
+          </button>
+        </main>
+      </>
+    );
+  }
 
-  return <div>Dashboard</div>;
-};
-
-export default Dashboard;
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserTable users={users} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Weather trends for{" "}
+              <span className="font-extrabold">{location}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WeatherChart data={weatherData} />
+          </CardContent>
+        </Card>
+      </div>
+      <div className="mt-6">
+        <Button onClick={handleExportPDF}>Export to PDF</Button>
+      </div>
+    </div>
+  );
+}
