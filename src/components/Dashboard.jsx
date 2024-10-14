@@ -12,9 +12,8 @@ import {
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { fetchUsers, fetchWeatherData } from "./utils/api";
-import UserTable from "./UserTAble";
+import UserTable from "./UserTable";
 import WeatherChart from "./WeatherChart";
-import Button from "./ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card";
 import LoadingSpinner from "./utils/LoadingSpinner";
 import { LocationContext } from "./utils/Context";
@@ -138,7 +137,12 @@ export default function Dashboard() {
         </Card>
       </div>
       <div className="mt-6">
-        <Button onClick={handleExportPDF}>Export to PDF</Button>
+        <button
+          className="bg-blue-600 p-3 rounded-md text-white"
+          onClick={handleExportPDF}
+        >
+          Export to PDF
+        </button>
       </div>
     </div>
   );

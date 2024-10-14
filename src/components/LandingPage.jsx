@@ -1,5 +1,4 @@
 import React, { useContext, useState } from "react";
-import Dashboard from "./Dashboard";
 import { useNavigate } from "react-router-dom";
 import { LocationContext } from "./utils/Context";
 
