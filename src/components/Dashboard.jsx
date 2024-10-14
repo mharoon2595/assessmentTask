@@ -48,7 +48,6 @@ export default function Dashboard() {
         setUsers(usersData);
         setWeatherData(weatherData);
       } catch (err) {
-        console.log(err);
         setError("Please enter the name of a valid city and try again.");
       } finally {
         setLoading(false);
